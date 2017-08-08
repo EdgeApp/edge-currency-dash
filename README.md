@@ -14,6 +14,7 @@ Since this package is not on NPM, you will have to do things manually:
     cd ../your-project
     npm install git+ssh://git@github.com/Airbitz/airbitz-currency-dash.git
     ```
+    
 ## Usage
 
 Initialize the plugin:
@@ -33,6 +34,8 @@ Now you can pass `dashPlugin` to `airbitz-core-js`.
     
 ## Developing the library
 
+The following instructions are for those looking to develop this library or use it as a template to build a new currency-plugin for Airbitz.
+
 1. Install cli-tool, dependencies, & build the library:
 
     ```
@@ -48,6 +51,16 @@ Now you can pass `dashPlugin` to `airbitz-core-js`.
     npm run updot
     ```
 
-Updot is a tool to copy needed files from peer dependencies into the node_modules of the project it is run in. This replaces the need for `npm link` which is broken in React Native.
+`updot` is a tool to copy needed files from peer dependencies into the node_modules of the project it is run in. This replaces the need for `npm link` which is broken in React Native. In this setup, it will copy `airbitz-cli` and `airbitz-currency-dash` into `airbitz-cli-react-native/node_modules`. During development, run `npm run updot` after making any changes to `airbitz-currency-dash` or `airbitz-cli`
 
-Launch the xcode project in `airbitz-cli-react-native/ios` to launch the cli tool. CLI command documentation can be seen by running `airbitz-cli help` from within the `airbitz-cli` project directory.
+Launch the xcode workspace in `airbitz-cli-react-native/ios` to launch the cli tool. CLI command documentation can be seen by running `airbitz-cli help` from within the `airbitz-cli` project directory.
+
+Example CLI commands:
+
+| Command | Description |
+| --- | --- |
+| `tx-info dash` | Get the `currencyInfo` object from the plugin |
+| `tx-make-engine dash dash` | Call makeEngine() method of the dash plugin and createMasterKeys() with a `dash` walletType |
+| `tx-start-engine` | Call startEngine() method of the plugin called in `tx-make-engine` |
+| `tx-balance DASH` | Call getBalance('DASH') |
+| `tx-spend Xo4PooC7oH8Wcpt3oiNnNR6qAHHfUetwGf 150000000 DASH` | Spend 1.5 dash to given address |
