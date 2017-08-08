@@ -7,7 +7,7 @@ import { ShitcoinEngine } from './currencyEngineTRD.js'
 
 let io
 
-class ShitcoinPlugin {
+class DashPlugin {
   static async makePlugin (opts:any) {
     io = opts.io
 
@@ -32,4 +32,4 @@ class ShitcoinPlugin {
   }
 }
 
-export { ShitcoinPlugin }
+export { DashPlugin }
