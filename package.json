@@ -1,7 +1,7 @@
 {
-  "name": "airbitz-currency-shitcoin",
+  "name": "airbitz-currency-dash",
   "version": "0.1.1",
-  "description": "Airbitz Shitcoin currency plugin",
+  "description": "Airbitz Dash currency plugin",
   "homepage": "https://airbitz.co",
   "license": "SEE LICENSE IN LICENSE",
   "author": "Airbitz, Inc.",
@@ -17,7 +17,7 @@
   "module": "./lib/indexShitcoin.es.js",
   "repository": {
     "type": "git",
-    "url": "git@github.com:Airbitz/airbitz-currency-shitcoin.git"
+    "url": "git@github.com:Airbitz/airbitz-currency-dash.git"
   },
   "dependencies": {
     "biggystring": "^1.0.3",
