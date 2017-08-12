@@ -3,7 +3,7 @@
  */
 // @flow
 
-import { currencyInfoTRD } from './currencyInfoTRD.js'
+import { txLibInfo } from './currencyInfoTRD.js'
 import { validate } from 'jsonschema'
 import { bns } from 'biggystring'
 
@@ -15,8 +15,8 @@ const TRANSACTION_POLL_MILLISECONDS = 3000
 const BLOCKHEIGHT_POLL_MILLISECONDS = 60000
 const SAVE_DATASTORE_MILLISECONDS = 10000
 
-const PRIMARY_CURRENCY = currencyInfoTRD.getInfo.currencyCode
-const TOKEN_CODES = [PRIMARY_CURRENCY].concat(currencyInfoTRD.supportedTokens)
+const PRIMARY_CURRENCY = txLibInfo.getInfo.currencyCode
+const TOKEN_CODES = [PRIMARY_CURRENCY].concat(txLibInfo.supportedTokens)
 
 const baseUrl = 'http://shitcoin-az-braz.airbitz.co:8080/api/'
 // const baseUrl = 'http://localhost:8080/api/'
@@ -86,7 +86,7 @@ class WalletLocalData {
   totalBalances: any
   enabledTokens:Array<string>
   gapLimitAddresses:Array<string>
-  transactionsObj:{}
+  transactionsObj:any
   transactionsToFetch:Array<string>
   addressArray:Array<AddressObject>
   unusedAddressIndex:number
@@ -148,6 +148,7 @@ class ABCTransaction {
   blockHeight:string
   nativeAmount:string
   networkFee:string
+  ourReceiveAddresses:Array<string>
   signedTx:string
   otherParams:ShitcoinParams
 
@@ -157,6 +158,7 @@ class ABCTransaction {
                blockHeight:string,
                nativeAmount:string,
                networkFee:string,
+               ourReceiveAddresses:Array<string>,
                signedTx:string,
                otherParams:ShitcoinParams) {
     this.txid = txid
@@ -166,6 +168,7 @@ class ABCTransaction {
     this.nativeAmount = nativeAmount
     this.amountSatoshi = parseInt(nativeAmount)
     this.networkFee = networkFee
+    this.ourReceiveAddresses = ourReceiveAddresses
     this.signedTx = signedTx
     this.otherParams = otherParams
   }
@@ -173,7 +176,7 @@ class ABCTransaction {
 
 export class ShitcoinEngine {
   io:any
-  keyInfo:any
+  walletInfo:any
   abcTxLibCallbacks:any
   walletLocalFolder:any
   engineOn:boolean
@@ -185,11 +188,11 @@ export class ShitcoinEngine {
   walletLocalDataDirty:boolean
   transactionsChangedArray:Array<{}>
 
-  constructor (_io:any, keyInfo:any, opts:any) {
+  constructor (_io:any, walletInfo:any, opts:any) {
     const { walletLocalFolder, callbacks } = opts
 
     io = _io
-    this.keyInfo = keyInfo
+    this.walletInfo = walletInfo
     this.abcTxLibCallbacks = callbacks
     this.walletLocalFolder = walletLocalFolder
 
@@ -347,9 +350,10 @@ export class ShitcoinEngine {
     //
 
     // Iterate through all the inputs and see if any are in our wallet
-    let spendAmounts:Array<string> = []
-    let receiveAmounts:Array<string> = []
-    let nativeAmounts:Array<string> = []
+    let spendAmounts:any = {}
+    let receiveAmounts:any = {}
+    let nativeAmounts:any = {}
+    let ourReceiveAddresses:Array<string> = []
 
     const inputs = jsonObj.inputs
     const outputs = jsonObj.outputs
@@ -357,7 +361,8 @@ export class ShitcoinEngine {
     const otherParams = new ShitcoinParams(inputs, outputs)
 
     for (const currencyCode of TOKEN_CODES) {
-      receiveAmounts[currencyCode] = spendAmounts[currencyCode] = '0'
+      receiveAmounts[currencyCode] = '0'
+      spendAmounts[currencyCode] = '0'
 
       for (let input of inputs) {
         const addr = input.address
@@ -377,6 +382,7 @@ export class ShitcoinEngine {
         if (idx !== -1 && ccode === currencyCode) {
           const tempVal = receiveAmounts[ccode]
           receiveAmounts[ccode] = bns.add(tempVal, output.amount)
+          ourReceiveAddresses.push(output.address)
         }
       }
       const tempVal = receiveAmounts[currencyCode]
@@ -394,6 +400,7 @@ export class ShitcoinEngine {
           jsonObj.blockHeight,
           nativeAmounts[currencyCode].toString(),
           jsonObj.networkFee,
+          ourReceiveAddresses,
           'iwassignedyoucantrustme',
           otherParams
         )
@@ -695,7 +702,7 @@ export class ShitcoinEngine {
     } else {
       this.walletLocalData = new WalletLocalData(result)
     }
-    this.walletLocalData.masterPublicKey = this.keyInfo.keys.masterPublicKey
+    this.walletLocalData.masterPublicKey = this.walletInfo.keys.masterPublicKey
 
     if (newData) {
       try {
@@ -968,6 +975,7 @@ export class ShitcoinEngine {
     }
     const tempVal = totalSpends[PRIMARY_CURRENCY]
     totalSpends[PRIMARY_CURRENCY] = bns.add(tempVal, networkFee)
+    let ourReceiveAddresses:Array<string> = []
 
     for (let currencyCode of this.walletLocalData.enabledTokens) {
       const totalSpend = totalSpends[currencyCode]
@@ -1024,6 +1032,7 @@ export class ShitcoinEngine {
       }
       if (bns.gt(totalInputAmounts[currencyCode], totalSpends[currencyCode])) {
         const changeAmt = bns.sub(totalInputAmounts[currencyCode], totalSpends[currencyCode])
+        ourReceiveAddresses.push(changeAddress)
         outputs.push({
           currencyCode,
           address: changeAddress,
@@ -1042,6 +1051,7 @@ export class ShitcoinEngine {
       '0',
       totalSpends[PRIMARY_CURRENCY],
       '0',
+      ourReceiveAddresses,
       '0',
       shitcoinParams
     )
